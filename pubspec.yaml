@@ -13,6 +13,8 @@ dependencies:
   flutter_blue: ^0.8.0
   permission_handler: ^11.2.0
   wifi_scan: ^0.4.1
+  wifi_conn: ^2.0.1
+
 
 dev_dependencies:
   flutter_test:

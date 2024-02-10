@@ -3,6 +3,7 @@ import 'dart:developer';
 // import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:wifi_conn/wifi_connector.dart';
 // import 'package:flutter_blue/flutter_blue.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 
@@ -28,6 +29,11 @@ class HomePageState extends State<HomePage> {
         setState(() {});
         break;
       case CanStartScan.notSupported:
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("notSupported: $element");
+          });
+        });
         isWifiConnecting = false;
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
@@ -36,6 +42,11 @@ class HomePageState extends State<HomePage> {
         break;
       case CanStartScan.noLocationPermissionRequired:
         isWifiConnecting = false;
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("noLocationPermissionRequired: $element");
+          });
+        });
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionRequired")));
@@ -43,6 +54,11 @@ class HomePageState extends State<HomePage> {
         break;
       case CanStartScan.noLocationPermissionDenied:
         isWifiConnecting = false;
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("noLocationPermissionDenied: $element");
+          });
+        });
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionDenied")));
@@ -50,6 +66,11 @@ class HomePageState extends State<HomePage> {
         break;
       case CanStartScan.noLocationPermissionUpgradeAccuracy:
         isWifiConnecting = false;
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("noLocationPermissionUpgradeAccuracy: $element");
+          });
+        });
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionUpgradeAccuracy")));
@@ -57,6 +78,11 @@ class HomePageState extends State<HomePage> {
         break;
       case CanStartScan.noLocationServiceDisabled:
         isWifiConnecting = false;
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("noLocationServiceDisabled: $element");
+          });
+        });
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationServiceDisabled")));
@@ -64,12 +90,21 @@ class HomePageState extends State<HomePage> {
         break;
       case CanStartScan.failed:
         isWifiConnecting = false;
+        await WiFiScan.instance.getScannedResults().then((value) {
+          value.forEach((element) {
+            log("failed: $element");
+          });
+        });
         setState(() {});
         Future.delayed(Duration.zero).then((value) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("failed")));
         });
         break;
     }
+  }
+
+  Future<void>connect(String ssid, String password)async{
+    await WifiConnector.connectToWifi(ssid: ssid, password: password, isWEP: true);
   }
 
   @override
@@ -86,22 +121,50 @@ class HomePageState extends State<HomePage> {
         physics: const BouncingScrollPhysics(),
         itemBuilder: (context, index) {
           return Card(
+
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(15),
               margin: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Name:        [${wifiList[index].ssid}]"),
-                  Text("bssid:       [${wifiList[index].bssid}]"),
-                  Text("Frequency:       [${wifiList[index].frequency}]"),
-                  Text("Level:       [${wifiList[index].level.toString()}]"),
-                  Text("Capabilities:        [${wifiList[index].capabilities}]"),
-                  Text("ChannelWidth index:     [${wifiList[index].channelWidth?.index.toString() ?? "---"}]"),
-                ],
+              child: MaterialButton(
+                onPressed: ()async{
+                  showDialog(
+                    context: context,
+                    builder: (context){
+                      TextEditingController controller = TextEditingController();
+                      return AlertDialog(
+                        content: TextField(
+                          controller: controller,
+                          decoration: const InputDecoration(
+                            hintText: "Password",
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () async {
+                              await connect(wifiList[index].ssid, controller.text.trim().toString());
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Connect"),
+                          )
+                        ],
+                      );
+                    }
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Name:        [${wifiList[index].ssid}]"),
+                    Text("bssid:       [${wifiList[index].bssid}]"),
+                    Text("Frequency:       [${wifiList[index].frequency}]"),
+                    Text("Level:       [${wifiList[index].level.toString()}]"),
+                    Text("Capabilities:        [${wifiList[index].capabilities}]"),
+                    Text("ChannelWidth index:     [${wifiList[index].channelWidth?.index.toString() ?? "---"}]"),
+                  ],
+                ),
               ),
             ),
           );
@@ -111,6 +174,7 @@ class HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          // await WiFiScan.instance.startScan();
           await _startScan();
         },
         child: const Text("Scan"),
