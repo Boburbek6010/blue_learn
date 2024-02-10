@@ -1,126 +1,117 @@
 import 'dart:async';
 import 'dart:developer';
+// import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:flutter_blue/flutter_blue.dart';
+import 'package:wifi_scan/wifi_scan.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
   @override
-  _HomePageState createState() => _HomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final FlutterBlue flutterBlue = FlutterBlue.instance;
-  bool _isScanning = true;
-  List<ScanResult> resultList = [];
-  bool _isConnecting = false;
-  BluetoothDevice? connectedDevice;
+class HomePageState extends State<HomePage> {
+  List<WiFiAccessPoint> wifiList = [];
+  bool isWifiConnecting = false;
 
-  void initBlue() {
-    flutterBlue.isScanning.listen((event) {
-      setState(() {
-        _isScanning = event;
-      });
-    });
-  }
-
-  Future<void> scan() async {
-    _isConnecting = false;
+  Future<void> _startScan() async {
+    isWifiConnecting = false;
     setState(() {});
-    if (!_isScanning) {
-      resultList.clear();
-      await flutterBlue.startScan(timeout: const Duration(seconds: 4));
-      flutterBlue.scanResults.listen((event) {
-        setState(() {
-          resultList = event;
+    final can = await WiFiScan.instance.canStartScan(askPermissions: true);
+    switch(can) {
+      case CanStartScan.yes:
+        wifiList = await WiFiScan.instance.getScannedResults();
+        isWifiConnecting = true;
+        setState(() {});
+        break;
+      case CanStartScan.notSupported:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("notSupported")));
         });
-      });
-    } else {
-      await flutterBlue.stopScan();
-    }
-  }
-
-  Future<void> connectToDevice(int index) async {
-    try {
-      _isConnecting = true;
-      setState(() {});
-      log("Connecting...");
-      await resultList[index].device.connect();
-      connectedDevice = resultList[index].device;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Successfully Connected")));
-    } catch (e) {
-      log("Connection error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Connection Failed")));
-    } finally {
-      _isConnecting = false;
-      setState(() {});
-    }
-  }
-
-  Future<void> disconnectFromDevice(int index) async {
-    try {
-      await resultList[index].device.disconnect();
-      connectedDevice = null;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Disconnected")));
-    } catch (e) {
-      log("Disconnection error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Disconnection Failed")));
-    }
-  }
-
-  Color getCardColor(int index) {
-    if (resultList[index].device == connectedDevice) {
-      return Colors.green;
-    } else {
-      return Colors.white;
+        break;
+      case CanStartScan.noLocationPermissionRequired:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionRequired")));
+        });
+        break;
+      case CanStartScan.noLocationPermissionDenied:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionDenied")));
+        });
+        break;
+      case CanStartScan.noLocationPermissionUpgradeAccuracy:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationPermissionUpgradeAccuracy")));
+        });
+        break;
+      case CanStartScan.noLocationServiceDisabled:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("noLocationServiceDisabled")));
+        });
+        break;
+      case CanStartScan.failed:
+        isWifiConnecting = false;
+        setState(() {});
+        Future.delayed(Duration.zero).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("failed")));
+        });
+        break;
     }
   }
 
   @override
   void initState() {
     super.initState();
-    initBlue();
+    _startScan();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          ListView.builder(
-            itemCount: resultList.length,
-            physics: const BouncingScrollPhysics(),
-            itemBuilder: (context, index) {
-              return Card(
-                color: getCardColor(index),
-                child: ListTile(
-                  onTap: () async {
-                    if (!_isConnecting) {
-                      await connectToDevice(index);
-                    }
-                  },
-                  onLongPress: () async {
-                    await disconnectFromDevice(index);
-                  },
-                  title: Text("Name: ${resultList[index].device.name ?? "Unknown"}"),
-                  subtitle: Text("ID: ${resultList[index].device.id.id}"),
-                  trailing: Text("Connectable: ${resultList[index].advertisementData.connectable}"),
-                ),
-              );
-            },
-          ),
-          if (_isConnecting)
-            const Center(
-              child: CircularProgressIndicator(),
+      body: isWifiConnecting ?ListView.builder(
+        itemCount: wifiList.length,
+        physics: const BouncingScrollPhysics(),
+        itemBuilder: (context, index) {
+          return Card(
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Name:        [${wifiList[index].ssid}]"),
+                  Text("bssid:       [${wifiList[index].bssid}]"),
+                  Text("Frequency:       [${wifiList[index].frequency}]"),
+                  Text("Level:       [${wifiList[index].level.toString()}]"),
+                  Text("Capabilities:        [${wifiList[index].capabilities}]"),
+                  Text("ChannelWidth index:     [${wifiList[index].channelWidth?.index.toString() ?? "---"}]"),
+                ],
+              ),
             ),
-        ],
+          );
+        },
+      ):const Center(
+        child: CircularProgressIndicator(),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await scan();
+          await _startScan();
         },
         child: const Text("Scan"),
       ),

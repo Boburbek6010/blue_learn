@@ -293,6 +293,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.0"
+  wifi_scan:
+    dependency: "direct main"
+    description:
+      name: wifi_scan
+      sha256: cd0b98a611a3206c1bd9e600b9dff3aca27dcc924aa025548b00713e93a27299
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.1"
 sdks:
   dart: ">=3.2.6 <4.0.0"
   flutter: ">=3.16.0"
