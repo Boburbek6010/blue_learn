@@ -10,10 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  flutter_blue: ^0.8.0
-  permission_handler: ^11.2.0
-  wifi_scan: ^0.4.1
-  wifi_conn: ^2.0.1
+  flutter_p2p_connection: ^2.0.1
+  connectivity_plus: ^5.0.2
+  network_info_plus: ^4.1.0+1
 
 
 dev_dependencies:
