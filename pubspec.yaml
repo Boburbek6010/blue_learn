@@ -13,6 +13,10 @@ dependencies:
   flutter_p2p_connection: ^2.0.1
   connectivity_plus: ^5.0.2
   network_info_plus: ^4.1.0+1
+  http: ^1.2.1
+  flutter_reactive_ble: ^5.3.1
+  uuid: ^3.0.4
+  flutter_blue_plus: ^1.31.16
 
 
 dev_dependencies:
